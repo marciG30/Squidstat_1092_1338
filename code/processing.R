@@ -1,89 +1,150 @@
+## USE THIS SCRIPT TO PROCESS SQUIDSTAT OUTPUT FILES
+## SET THE CHRONO AND CV FILE PATHS, THEN RUN THE REST OF THE SCRIPT
 
-# load packages
+## This script will pull all .csv files from the target folders and then clean and process the files 
+
+## 2021-02-05 Kaizad F. Patel, Marci Garcia
+
+######################
+######################
+
+# PART 0. SET INPUT FILE PATHS --------------------------------------------
+CHRONO_PATH = "data/chrono"
+CV_PATH = "data/cv"
+
+
+# PART 0b. LOAD PACKAGES AND SET UP THE PLOTS -----------------------------
 library(tidyverse)
+theme_set(theme_bw())
 
+#
 # PART 1. CHRONO DATA -----------------------------------------------------
 ## import files -------------------------------------------------------------
-PATH = "data/chrono2"
-filePaths <- list.files(path = PATH,pattern = "*.csv", recursive = TRUE, full.names = TRUE)
+chrono_filePaths <- list.files(path = CHRONO_PATH, pattern = "*.csv", recursive = TRUE, full.names = TRUE)
+chrono_data <- 
+  do.call(bind_rows, lapply(chrono_filePaths, function(path) {
+    # the files are comma-delimited, but in a weird encoding format, so read.csv will not work. 
+    # first, import using read.table
+    df <- read.table(path, sep = ",", fill = TRUE)
+    
+    # next, we need to move the column headers up from the first row
+    df <- 
+      df %>% 
+      rownames_to_column() %>%
+      `colnames<-`(.[1,]) %>%
+      .[-1,] %>%
+      `rownames<-`(NULL) %>% as.data.frame(.) 
+    
+    # then, add a new column `source` to denote the file name
+    df[["source"]] <- rep(path, nrow(df))
+    
+    # finally, clean the file
+    # rename and subset the columns needed
+    df2 = 
+      df %>% 
+      rename(step_number = `Step number`,
+             elapsed_time_s = `Elapsed Time (s)`,
+             current_mA = `Current (mA)`) %>% 
+      dplyr::select(step_number, elapsed_time_s, current_mA, source) %>% 
+      mutate(instrument = str_extract(source, "Prime[0-9]{4}"),
+             channel = str_extract(source, "ch[0-9]"),
+             date = str_extract(source, "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>% 
+      mutate(elapsed_time_s = as.numeric(elapsed_time_s),
+             current_mA = as.numeric(current_mA),
+             date = lubridate::ymd(date)) %>% 
+      dplyr::select(-source)
+    
+    df2
+  }
+  )
+  )
 
-chrono_data = sapply(list.files(path = PATH, pattern = "*.csv", 
-                                recursive = TRUE, full.names = TRUE),
-                     read.table, sep = ",", fill = TRUE, simplify = FALSE) %>% bind_rows() 
 
-
-
-data = read.table("Chrono_Geo_0.2V_constant_potent_Prime1092_ch1_(2021-01-28_12_07_37)/1_Chrono_Geo_0.2V_constant_potent-Constant_Potential_20210128_120741.csv", sep = ",", fill = TRUE)
-
-
-library(readxl)
-
-
-
-
-
-library(tidyverse)
-colnames(data_cv) <- data_cv[1,]
-
-
-data = read.delim2("data/chrono.csv", encoding = "ANSI")
-
-# convert elapsed time s to hr
-# current vs time
-
-
+# process files -----------------------------------------------------------
 ## use `names()` to get column names
 
+chrono_data_processed = 
+  chrono_data %>% 
+  # convert elapsed_time_s into hour
+  # rearrange by date and time
+  mutate(elapsed_time_hr = elapsed_time_s/3600) %>% 
+  group_by(instrument, channel) %>% 
+  arrange(date, elapsed_time_s)
 
-# clean and process the data ----------------------------------------------
-
-data_processed = 
-  data %>% 
-  mutate(elapsed_time_hr = `Elapsed.Time..s.`/3600) %>% 
-  rename(current_mA = `Current..mA.`)
-
-
+#
 # plot the graph ----------------------------------------------------------
-data_processed %>% 
+
+chrono_data_processed %>% 
   ggplot(aes(x = elapsed_time_hr, y = current_mA))+
-  geom_point()+
-  geom_path()
+  #geom_point()+
+  geom_path()+
+  labs(x = "elapsed time (hours)",
+       y = "current (mA)")+
+  facet_grid(instrument~channel)
 
 
+#
 
+# -------------------------------------------------------------------------
 # PART 2. cyclic voltammetry ------------------------------------------------------
+## import files -------------------------------------------------------------
+cv_filePaths <- list.files(path = CV_PATH, pattern = "*.csv", recursive = TRUE, full.names = TRUE)
+cv_data <- 
+  do.call(bind_rows, lapply(cv_filePaths, function(path) {
+    # the files are comma-delimited, but in a weird encoding format, so read.csv will not work. 
+    # first, import using read.table
+    df <- read.table(path, sep = ",", fill = TRUE)
+    
+    # next, we need to move the column headers up from the first row
+    df <- 
+      df %>% 
+      rownames_to_column() %>%
+      `colnames<-`(.[1,]) %>%
+      .[-1,] %>%
+      `rownames<-`(NULL) %>% as.data.frame(.) 
+    
+    # then, add a new column `source` to denote the file name
+    df[["source"]] <- rep(path, nrow(df))
+    
+    # finally, clean the file
+    # rename and subset the columns needed
+    df2 = 
+      df %>% 
+      rename(step_number = `Step number`,
+             elapsed_time_s = `Elapsed Time (s)`,
+             current_mA = `Current (mA)`,
+             working_electrode_V = `Working Electrode (V)`) %>% 
+      dplyr::select(step_number, elapsed_time_s, current_mA, working_electrode_V, source) %>% 
+      mutate(instrument = str_extract(source, "Prime[0-9]{4}"),
+             channel = str_extract(source, "ch[0-9]"),
+             date = str_extract(source, "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>% 
+      mutate(elapsed_time_s = as.numeric(elapsed_time_s),
+             current_mA = as.numeric(current_mA),
+             working_electrode_V = as.numeric(working_electrode_V),
+             date = lubridate::ymd(date)) %>% 
+      dplyr::select(-source)
+    
+    df2
+    
+  }
+  )
+  )
 
-data = read.csv("data/cv/CV_GEO_RT_REF Prime1092 ch1 (2021-02-05 13_44_04)/1_CV_GEO_RT_REF-Cyclic Voltammetry 20210205 134439_v2.csv")
-
-
-
-# use read.table() with the arguments to import the files, because of weird csv encoding
-
-data_cv = read.table("data/1_CV_GEO_RT_REF-Cyclic Voltammetry 20210205 134439.txt", header = TRUE, sep = ",", fill = TRUE)
-
-a = 
-  (data_cv) %>% 
-  rownames_to_column() %>%
-  `colnames<-`(.[1,]) %>%
-  .[-1,] %>%
-  `rownames<-`(NULL) %>% as.data.frame(.)
-
-
-a_new = a %>% dplyr::select(`Step number`, `Elapsed Time (s)`)
-
+#
 # clean and process the data ----------------------------------------------
 
-data_processed = 
-  data %>% 
-  rename(current_mA = `Current..mA.`,
-         working_electrode_V = `Working.Electrode..V.`)
+cv_data_processed = 
+  cv_data %>% 
+  group_by(instrument, channel) %>% 
+  arrange(date, elapsed_time_s)
 
-
+#
 # plot the graph ----------------------------------------------------------
-data_processed %>% 
+
+cv_data_processed %>% 
   ggplot(aes(x = working_electrode_V, y = current_mA))+
   #geom_point()+
-  geom_path()
-
-
-
+  geom_path()+
+  labs(x = "working electrode (V)",
+       y = "current (mA)")+
+  facet_grid(instrument~channel)
