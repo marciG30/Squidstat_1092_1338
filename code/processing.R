@@ -127,6 +127,7 @@ cv_data <-
 
 cv_data_processed = 
   cv_data %>% 
+  filter(current_mA >= -0.3) %>% 
   group_by(instrument, channel) %>% 
   arrange(date, elapsed_time_s)
 
@@ -139,4 +140,6 @@ cv_data_processed %>%
   geom_path()+
   labs(x = "working electrode (V)",
        y = "current (mA)")+
+  xlim(-0.9,0.9)+
+  #facet_wrap(~instrument+channel)
   facet_grid(instrument~channel)
