@@ -107,8 +107,8 @@ cv_data <-
              current_mA = `Current..mA.`,
              working_electrode_V = `Working.Electrode..V.`) %>% 
       dplyr::select(step_number, elapsed_time_s, current_mA, working_electrode_V, source) %>% 
-      mutate(instrument = str_extract(source, "Prime[0-9]{4}"),
-             channel = str_extract(source, "ch[0-9]"),
+      mutate(instrument = str_extract(source, "prime[0-9]{4}"),
+             channel = str_extract(source, "Chan_[0-9]"),
              date = str_extract(source, "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>% 
       mutate(elapsed_time_s = as.numeric(elapsed_time_s),
              current_mA = as.numeric(current_mA),
