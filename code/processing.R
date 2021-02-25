@@ -93,15 +93,7 @@ cv_data <-
   do.call(bind_rows, lapply(cv_filePaths, function(path) {
     # the files are comma-delimited, but in a weird encoding format, so read.csv will not work. 
     # first, import using read.table
-    df <- read.table(path, sep = ",", fill = TRUE)
-    
-    # next, we need to move the column headers up from the first row
-    df <- 
-      df %>% 
-      rownames_to_column() %>%
-      `colnames<-`(.[1,]) %>%
-      .[-1,] %>%
-      `rownames<-`(NULL) %>% as.data.frame(.) 
+    df <- read.csv(path, sep = ",", fileEncoding = "latin1", fill = TRUE)
     
     # then, add a new column `source` to denote the file name
     df[["source"]] <- rep(path, nrow(df))
@@ -110,10 +102,10 @@ cv_data <-
     # rename and subset the columns needed
     df2 = 
       df %>% 
-      rename(step_number = `Step number`,
-             elapsed_time_s = `Elapsed Time (s)`,
-             current_mA = `Current (mA)`,
-             working_electrode_V = `Working Electrode (V)`) %>% 
+      rename(step_number = `Step.number`,
+             elapsed_time_s = `Elapsed.Time..s.`,
+             current_mA = `Current..mA.`,
+             working_electrode_V = `Working.Electrode..V.`) %>% 
       dplyr::select(step_number, elapsed_time_s, current_mA, working_electrode_V, source) %>% 
       mutate(instrument = str_extract(source, "Prime[0-9]{4}"),
              channel = str_extract(source, "ch[0-9]"),
