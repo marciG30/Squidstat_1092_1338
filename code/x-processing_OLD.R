@@ -9,7 +9,7 @@
 ######################
 
 # PART 0. SET INPUT FILE PATHS --------------------------------------------
-CHRONO_PATH = "data/chrono"
+CHRONO_PATH = "data/chrono/Chrono_2021_02_25"
 CV_PATH = "data/cv"
 
 
