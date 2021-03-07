@@ -22,7 +22,7 @@ CV_FIGURE_PATH = "figures/cv_2021-03-04.png"
 
 #
 # step 1: process the data -----------------------------------------------
-source("code/processing_functions.R")
+source("code/2-functions.R")
 
 chrono_processed = process_chrono_files(CHRONO_DATA_PATH)
 (chrono_graph = plot_chrono_graph(chrono_processed))
