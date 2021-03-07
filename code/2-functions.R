@@ -37,7 +37,8 @@ process_chrono_files = function(CHRONO_DATA_PATH){
   
   # this function will clean the file (rename, filter unnecessary data)
   clean_chrono_files = function(chrono_files){
-    chrono_files %>% 
+    temp = 
+      chrono_files %>% 
       # rename and subset the columns needed
       rename(step_number = `Step.number`,
              elapsed_time_s = `Elapsed.Time..s.`,
@@ -49,10 +50,30 @@ process_chrono_files = function(CHRONO_DATA_PATH){
       mutate(elapsed_time_s = as.numeric(elapsed_time_s),
              current_mA = as.numeric(current_mA),
              date = lubridate::ymd(date)) %>% 
-      dplyr::select(-source) %>% 
+      dplyr::select(-source) %>%
+      # if a run spanned multiple days, we need to add the maximum time of the first day to the time of the second day
+      # to do this, we assign a group number to each date
+      # and then add the max per group to the next group
+      mutate(newdate = date != c(NA, head(date, -1))) %>% 
+      drop_na() %>% 
+      mutate(date_group = cumsum(newdate)) %>% 
+      dplyr::select(-newdate)
+    
+    max_time = 
+      temp %>% 
+      group_by(channel, instrument, date_group) %>% 
+      dplyr::summarise(max = max(elapsed_time_s)) %>% 
+      mutate(date_group = date_group+1) %>% 
+      rename(max_prev = max)
+  
+    temp %>% 
+      left_join(max_time) %>% 
+      replace(is.na(.), 0) %>% 
+      mutate(elapsed_time_s = elapsed_time_s + max_prev) %>% 
       # convert elapsed_time_s into hour
       # rearrange by date and time
       mutate(elapsed_time_hr = elapsed_time_s/3600) %>% 
+      dplyr::select(-max_prev) %>% 
       group_by(instrument, channel) %>% 
       arrange(date, elapsed_time_s)
     
@@ -99,7 +120,8 @@ process_cv_files = function(CV_DATA_PATH){
     
     # finally, clean the file
     # rename and subset the columns needed
-    cv_files %>% 
+    temp = 
+      cv_files %>% 
       rename(step_number = `Step.number`,
              elapsed_time_s = `Elapsed.Time..s.`,
              current_mA = `Current..mA.`,
@@ -116,7 +138,29 @@ process_cv_files = function(CV_DATA_PATH){
       filter(current_mA >= -0.3) %>% 
       group_by(instrument, channel) %>% 
       arrange(date, elapsed_time_s) %>% 
-      filter(elapsed_time_s > 120)
+      filter(elapsed_time_s > 120) %>% 
+    # if a run spanned multiple days, we need to add the maximum time of the first day to the time of the second day
+    # to do this, we assign a group number to each date
+    # and then add the max per group to the next group
+    mutate(newdate = date != c(NA, head(date, -1))) %>% 
+      drop_na() %>% 
+      mutate(date_group = cumsum(newdate)) %>% 
+      dplyr::select(-newdate)
+    
+    max_time = 
+      temp %>% 
+      group_by(channel, instrument, date_group) %>% 
+      dplyr::summarise(max = max(elapsed_time_s)) %>% 
+      mutate(date_group = date_group+1) %>% 
+      rename(max_prev = max)
+    
+    temp %>% 
+      left_join(max_time) %>% 
+      replace(is.na(.), 0) %>% 
+      mutate(elapsed_time_s = elapsed_time_s + max_prev) %>% 
+      dplyr::select(-max_prev) %>% 
+      group_by(instrument, channel) %>% 
+      arrange(date, elapsed_time_s)
   }
   cv_processed = clean_cv_files(cv_files)
   cv_processed
