@@ -23,17 +23,9 @@ process_chrono_files = function(CHRONO_DATA_PATH){
     
     chrono_data <- 
       do.call(bind_rows, lapply(chrono_filePaths, function(path) {
-        # the files are comma-delimited, but in a weird encoding format, so read.csv will not work. 
-        # first, import using read.table
-        df <- read.table(path, sep = ",", fill = TRUE)
-        
-        # next, we need to move the column headers up from the first row
-        df <- 
-          df %>% 
-          rownames_to_column() %>%
-          `colnames<-`(.[1,]) %>%
-          .[-1,] %>%
-          `rownames<-`(NULL) %>% as.data.frame(.) 
+        # the files are comma-delimited, but in a weird encoding format, 
+        # so read.csv needs an encoding argument 
+        df <- read.csv(path, sep = ",", fileEncoding = "latin1", fill = TRUE)
         
         # then, add a new column `source` to denote the file name
         df[["source"]] <- rep(path, nrow(df))
@@ -47,9 +39,9 @@ process_chrono_files = function(CHRONO_DATA_PATH){
   clean_chrono_files = function(chrono_files){
     chrono_files %>% 
       # rename and subset the columns needed
-      rename(step_number = `Step number`,
-             elapsed_time_s = `Elapsed Time (s)`,
-             current_mA = `Current (mA)`) %>% 
+      rename(step_number = `Step.number`,
+             elapsed_time_s = `Elapsed.Time..s.`,
+             current_mA = `Current..mA.`) %>% 
       dplyr::select(step_number, elapsed_time_s, current_mA, source) %>% 
       mutate(instrument = str_extract(source, "prime[0-9]{4}"),
              channel = str_extract(source, "Chan_[0-9]"),
