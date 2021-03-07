@@ -62,9 +62,12 @@ process_chrono_files = function(CHRONO_DATA_PATH){
 }
 plot_chrono_graph = function(chrono_processed){    
   chrono_processed %>% 
+    mutate(group = if_else((channel %in% c("Chan_1", "Chan_2") & instrument == "prime1092") | 
+                             (channel == "Chan_4" & instrument == "prime1338"),
+                           "no membrane", "membrane")) %>% 
     ggplot(aes(x = elapsed_time_hr, y = current_mA))+
     #geom_point()+
-    geom_path()+
+    geom_path(aes(color = group))+
     labs(x = "elapsed time (hours)",
          y = "current (mA)")+
     facet_grid(instrument~channel)
@@ -120,9 +123,12 @@ process_cv_files = function(CV_DATA_PATH){
 }
 plot_cv_graph = function(cv_processed){
   cv_processed %>% 
+  mutate(group = if_else((channel %in% c("Chan_1", "Chan_2") & instrument == "prime1092") | 
+                             (channel == "Chan_4" & instrument == "prime1338"),
+                           "no membrane", "membrane")) %>% 
   ggplot(aes(x = working_electrode_V, y = current_mA))+
   #geom_point()+
-  geom_path()+
+  geom_path(aes(color = group))+
   labs(x = "working electrode (V)",
        y = "current (mA)")+
   xlim(-0.9,0.9)+
