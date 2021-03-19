@@ -173,7 +173,9 @@ plot_cv_graph = function(cv_processed){
   ggplot(aes(x = working_electrode_V, y = current_mA))+
   #geom_point()+
   geom_path(aes(color = group))+
-  labs(x = "working electrode (V)",
+  # if you need to color by membrane/no-membrane, use the line below  
+  # geom_path(aes(color = group))+
+    labs(x = "working electrode (V)",
        y = "current (mA)")+
   xlim(-0.9,0.9)+
   #facet_wrap(~instrument+channel)
