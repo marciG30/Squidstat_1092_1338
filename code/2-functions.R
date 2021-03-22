@@ -135,10 +135,10 @@ process_cv_files = function(CV_DATA_PATH){
              working_electrode_V = as.numeric(working_electrode_V),
              date = lubridate::ymd(date)) %>% 
       dplyr::select(-source) %>% 
-      filter(current_mA >= -0.3) %>% 
+      #filter(current_mA >= -0.3) %>% 
       group_by(instrument, channel) %>% 
       arrange(date, elapsed_time_s) %>% 
-      filter(elapsed_time_s > 120) %>% 
+      # filter(elapsed_time_s > 120) %>% 
     # if a run spanned multiple days, we need to add the maximum time of the first day to the time of the second day
     # to do this, we assign a group number to each date
     # and then add the max per group to the next group
@@ -172,12 +172,12 @@ plot_cv_graph = function(cv_processed){
                            "no membrane", "membrane")) %>% 
   ggplot(aes(x = working_electrode_V, y = current_mA))+
   #geom_point()+
-  geom_path(aes(color = group))+
+  geom_path()+
   # if you need to color by membrane/no-membrane, use the line below  
   # geom_path(aes(color = group))+
     labs(x = "working electrode (V)",
        y = "current (mA)")+
   xlim(-0.9,0.9)+
-  #facet_wrap(~instrument+channel)
-  facet_grid(instrument~channel)
+  facet_wrap(~instrument+channel)
+  #facet_grid(instrument~channel)
 }
