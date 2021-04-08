@@ -17,8 +17,8 @@
 CHRONO_DATA_PATH = "data/chrono/Chrono_2021_02_25"
 CHRONO_FIGURE_PATH = "figures/chrono_2021-02-25.png"
 
-CV_DATA_PATH = "data/cv/cv_2021_03_19"
-CV_FIGURE_PATH = "figures/cv_2021-03-19.png"
+CV_DATA_PATH = "data/cv/cv_2021_04_07_post"
+CV_FIGURE_PATH = "figures/cv_2021-04-07_post.png"
 
 #
 # step 1: process the data -----------------------------------------------

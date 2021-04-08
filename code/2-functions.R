@@ -181,3 +181,8 @@ plot_cv_graph = function(cv_processed){
   facet_wrap(~instrument+channel)
   #facet_grid(instrument~channel)
 }
+testing <- cv_processed %>% mutate("combined" = paste(instrument,channel))
+
+testing %>% ggplot(aes(x=working_electrode_V,y= current_mA, color = combined))+geom_point()
+
+
